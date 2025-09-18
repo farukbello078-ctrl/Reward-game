@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Reward Game App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f8ff;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #007bff;
+      color: white;
+      padding: 15px;
+      text-align: center;
+    }
+    nav {
+      display: flex;
+      justify-content: center;
+      background: #333;
+    }
+    nav button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      background: #333;
+      color: white;
+      cursor: pointer;
+    }
+    nav button.active {
+      background: #007bff;
+    }
+    section {
+      display: none;
+      padding: 20px;
+      text-align: center;
+    }
+    section.active {
+      display: block;
+    }
+    #gameArea {
+      width: 300px;
+      height: 400px;
+      margin: 20px auto;
+      border: 2px solid #333;
+      position: relative;
+      background: #fff;
+    }
+    #ball {
+      width: 50px;
+      height: 50px;
+      background: red;
+      border-radius: 50%;
+      position: absolute;
+      cursor: pointer;
+    }
+    button {
+      padding: 10px 20px;
+      border: none;
+      margin-top: 10px;
+      background: #007bff;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:disabled {
+      background: gray;
+    }
+    input, select {
+      padding: 8px;
+      margin: 5px 0;
+      width: 80%;
+      max-width: 250px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🎮 Reward Game App</h1>
+  </header>
+
+  <nav>
+    <button id="gameTab" class="active">Game</button>
+    <button id="walletTab">Wallet</button>
+  </nav>
+
+  <!-- Game Section -->
+  <section id="gameSection" class="active">
+    <h2>Click the Ball!</h2>
+    <p>⏳ Time Left: <span id="time">30</span>s</p>
+    <p>⭐ Score: <span id="score">0</span></p>
+    <p>🏆 High Score: <span id="highScore">0</span></p>
+    <p>💰 Coins: <span id="coins">0</span></p>
+
+    <div id="gameArea">
+      <div id="ball"></div>
+    </div>
+
+    <button id="startBtn">Start Game</button>
+  </section>
+
+  <!-- Wallet Section -->
+  <section id="walletSection">
+    <h2>💰 My Wallet</h2>
+    <p>Total Coins: <span id="walletCoins">0</span></p>
+
+    <h3>Withdraw Request</h3>
+    <form id="withdrawForm">
+      <input type="text" id="name" placeholder="Full Name" required><br>
+      <select id="method" required>
+        <option value="">Select Method</option>
+        <option value="Opay">Opay</option>
+        <option value="Paypal">Paypal</option>
+        <option value="Bank">Bank Transfer</option>
+      </select><br>
+      <input type="text" id="account" placeholder="Account/Number/Email" required><br>
+      <input type="number" id="amount" placeholder="Amount in Coins" required><br>
+      <button type="submit">Send Request</button>
+    </form>
+
+    <p id="message" style="color:green;"></p>
+  </section>
+
+  <script>
+    // Tabs Navigation
+    const gameTab = document.getElementById("gameTab");
+    const walletTab = document.getElementById("walletTab");
+    const gameSection = document.getElementById("gameSection");
+    const walletSection = document.getElementById("walletSection");
+
+    function showSection(section) {
+      gameSection.classList.remove("active");
+      walletSection.classList.remove("active");
+      gameTab.classList.remove("active");
+      walletTab.classList.remove("active");
+
+      if (section === "game") {
+        gameSection.classList.add("active");
+        gameTab.classList.add("active");
+      } else {
+        walletSection.classList.add("active");
+        walletTab.classList.add("active");
+        // Update wallet coins
+        document.getElementById("walletCoins").textContent = coins;
+      }
+    }
+
+    gameTab.addEventListener("click", () => showSection("game"));
+    walletTab.addEventListener("click", () => showSection("wallet"));
+
+    // Game Logic
+    let score = 0;
+    let timeLeft = 30;
+    let timer;
+    const ball = document.getElementById("ball");
+    const gameArea = document.getElementById("gameArea");
+    const scoreDisplay = document.getElementById("score");
+    const timeDisplay = document.getElementById("time");
+    const highScoreDisplay = document.getElementById("highScore");
+    const coinsDisplay = document.getElementById("coins");
+    const startBtn = document.getElementById("startBtn");
+
+    // Load High Score & Coins daga LocalStorage
+    let highScore = localStorage.getItem("highScore") || 0;
+    let coins = parseInt(localStorage.getItem("coins")) || 0;
+    highScoreDisplay.textContent = highScore;
+    coinsDisplay.textContent = coins;
+
+    function moveBall() {
+      const x = Math.random() * (gameArea.clientWidth - 50);
+      const y = Math.random() * (gameArea.clientHeight - 50);
+      ball.style.left = x + "px";
+      ball.style.top = y + "px";
+    }
+
+    function startGame() {
+      score = 0;
+      timeLeft = 30;
+      scoreDisplay.textContent = score;
+      timeDisplay.textContent = timeLeft;
+      startBtn.disabled = true;
+      moveBall();
+
+      timer = setInterval(() => {
+        timeLeft--;
+        timeDisplay.textContent = timeLeft;
+
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          startBtn.disabled = false;
+
+          // Update coins (10 score = 1 coin)
+          let earnedCoins = Math.floor(score / 10);
+          coins += earnedCoins;
+          localStorage.setItem("coins", coins);
+          coinsDisplay.textContent = coins;
+
+          // Update high score
+          if (score > highScore) {
+            highScore = score;
+            localStorage.setItem("highScore", highScore);
+            highScoreDisplay.textContent = highScore;
+            alert("🎉 New High Score: " + score + " | Earned Coins: " + earnedCoins);
+          } else {
+            alert("⏰ Game Over! Score: " + score + " | Earned Coins: " + earnedCoins);
+          }
+        }
+      }, 1000);
+    }
+
+    ball.addEventListener("click", () => {
+      if (timeLeft > 0) {
+        score++;
+        scoreDisplay.textContent = score;
+        moveBall();
+      }
+    });
+
+    startBtn.addEventListener("click", startGame);
+
+    // Withdraw form
+    const withdrawForm = document.getElementById("withdrawForm");
+    withdrawForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const name = document.getElementById("name").value;
+      const method = document.getElementById("method").value;
+      const account = document.getElementById("account").value;
+      const amount = parseInt(document.getElementById("amount").value);
+
+      if (amount > coins) {
+        document.getElementById("message").textContent = "❌ Not enough coins!";
+        return;
+      }
+
+      // A nan zaka iya aika request zuwa server/backend
+      document.getElementById("message").textContent = "✅ Withdraw request sent!";
+
+      // Reset form
+      withdrawForm.reset();
+    });
+  </script>
+</body>
+</html>
